@@ -1,4 +1,6 @@
 // app/api/bets/route.ts
+export const dynamic = 'force-dynamic';
+
 import { NextResponse }               from 'next/server';
 import type { NextRequest }           from 'next/server';
 import { createRouteHandlerClient }   from '@supabase/auth-helpers-nextjs';
@@ -27,7 +29,6 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { selections, stake, type } = betSchema.parse(body);
 
-    // Récupérer le portefeuille
     const wallet = await prisma.wallet.findUnique({
       where: { userId: session.user.id },
     });
@@ -40,19 +41,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: 'Solde insuffisant' }, { status: 400 });
     }
 
-    // Calculer la cote totale
-    const totalOdds   = selections.reduce((acc, s) => acc * s.odds, 1);
+    const totalOdds    = selections.reduce((acc, s) => acc * s.odds, 1);
     const potentialWin = parseFloat((stake * totalOdds).toFixed(2));
 
-    // Transaction atomique
     const bet = await prisma.$transaction(async (tx) => {
-      // Débiter le portefeuille
       await tx.wallet.update({
         where: { id: wallet.id },
         data:  { balance: { decrement: stake } },
       });
 
-      // Créer la transaction
       await tx.transaction.create({
         data: {
           userId:   session.user.id,
@@ -63,8 +60,7 @@ export async function POST(req: NextRequest) {
         },
       });
 
-      // Créer le pari
-      const newBet = await tx.bet.create({
+      return await tx.bet.create({
         data: {
           userId:       session.user.id,
           type,
@@ -81,8 +77,6 @@ export async function POST(req: NextRequest) {
         },
         include: { betItems: true },
       });
-
-      return newBet;
     });
 
     return NextResponse.json({ bet }, { status: 201 });

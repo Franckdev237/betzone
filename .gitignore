@@ -1,3 +1,25 @@
+# Dépendances
 node_modules/
+
+# Next.js
 .next/
+out/
+
+# Variables d'environnement (ne jamais pousser sur GitHub)
+.env
+.env.local
 .env*.local
+
+# Fichiers sensibles
+infos supabase.txt
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Prisma
+prisma/migrations/
