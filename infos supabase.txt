@@ -1,0 +1,11 @@
+URL PROJET :https://dnxyjplddgmzxzgrnqze.supabase.co
+
+cle publiable: sb_publishable_EJFto-R5xZ50D4Jn_4zrTA_iMJ8NQKX
+
+chaine de connexion directe: postgresql://postgres:[YOUR-PASSWORD]@db.dnxyjplddgmzxzgrnqze.supabase.co:5432/postgres
+
+commande de configuration CL :supabase login
+supabase init
+supabase link --project-ref dnxyjplddgmzxzgrnqze
+
+mot de passe bd:Franck@2026p

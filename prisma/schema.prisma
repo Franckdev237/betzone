@@ -1,0 +1,242 @@
+// prisma/schema.prisma
+// Base de données PostgreSQL via Supabase
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ─────────────────────────────────────────
+// UTILISATEURS
+// ─────────────────────────────────────────
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  username      String    @unique
+  avatarUrl     String?
+  role          Role      @default(USER)
+  isVerified    Boolean   @default(false)
+  isBanned      Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  wallet        Wallet?
+  bets          Bet[]
+  transactions  Transaction[]
+
+  @@map("users")
+}
+
+enum Role {
+  USER
+  ADMIN
+  MODERATOR
+}
+
+// ─────────────────────────────────────────
+// PORTEFEUILLE
+// ─────────────────────────────────────────
+model Wallet {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  balance   Decimal  @default(0) @db.Decimal(12, 2)
+  currency  String   @default("XOF")   // FCFA par défaut
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions Transaction[]
+
+  @@map("wallets")
+}
+
+// ─────────────────────────────────────────
+// TRANSACTIONS
+// ─────────────────────────────────────────
+model Transaction {
+  id          String          @id @default(cuid())
+  userId      String
+  walletId    String
+  type        TransactionType
+  amount      Decimal         @db.Decimal(12, 2)
+  status      PaymentStatus   @default(PENDING)
+  reference   String?         @unique
+  metadata    Json?
+  createdAt   DateTime        @default(now())
+
+  user   User   @relation(fields: [userId],   references: [id])
+  wallet Wallet @relation(fields: [walletId], references: [id])
+
+  @@map("transactions")
+}
+
+enum TransactionType {
+  DEPOSIT
+  WITHDRAWAL
+  BET_PLACED
+  BET_WON
+  BET_REFUND
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+// ─────────────────────────────────────────
+// SPORTS & COMPÉTITIONS
+// ─────────────────────────────────────────
+model Sport {
+  id           String        @id @default(cuid())
+  name         String        @unique   // Football, Basketball...
+  slug         String        @unique
+  iconUrl      String?
+  isActive     Boolean       @default(true)
+  competitions Competition[]
+
+  @@map("sports")
+}
+
+model Competition {
+  id       String  @id @default(cuid())
+  sportId  String
+  name     String                        // Ligue 1, Champions League...
+  country  String?
+  logoUrl  String?
+  isActive Boolean @default(true)
+
+  sport  Sport   @relation(fields: [sportId], references: [id])
+  events Event[]
+
+  @@map("competitions")
+}
+
+// ─────────────────────────────────────────
+// ÉVÉNEMENTS (MATCHS)
+// ─────────────────────────────────────────
+model Event {
+  id            String      @id @default(cuid())
+  competitionId String
+  homeTeam      String
+  awayTeam      String
+  homeLogoUrl   String?
+  awayLogoUrl   String?
+  startAt       DateTime
+  status        EventStatus @default(UPCOMING)
+  homeScore     Int?
+  awayScore     Int?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  competition Competition @relation(fields: [competitionId], references: [id])
+  markets     Market[]
+
+  @@map("events")
+}
+
+enum EventStatus {
+  UPCOMING
+  LIVE
+  FINISHED
+  CANCELLED
+  POSTPONED
+}
+
+// ─────────────────────────────────────────
+// MARCHÉS DE PARIS (1X2, Over/Under...)
+// ─────────────────────────────────────────
+model Market {
+  id          String       @id @default(cuid())
+  eventId     String
+  name        String       // "Résultat Final", "Plus/Moins 2.5 buts"
+  type        MarketType
+  isOpen      Boolean      @default(true)
+  suspendedAt DateTime?
+
+  event     Event      @relation(fields: [eventId], references: [id])
+  outcomes  Outcome[]
+
+  @@map("markets")
+}
+
+enum MarketType {
+  MATCH_WINNER       // 1X2
+  BOTH_TEAMS_SCORE   // GG/NG
+  OVER_UNDER         // +2.5 / -2.5
+  ASIAN_HANDICAP
+  CORRECT_SCORE
+  HALF_TIME
+}
+
+// ─────────────────────────────────────────
+// ISSUES (cotes par marché)
+// ─────────────────────────────────────────
+model Outcome {
+  id        String    @id @default(cuid())
+  marketId  String
+  label     String    // "1", "X", "2", "Over 2.5"
+  odds      Decimal   @db.Decimal(8, 2)
+  isWinner  Boolean?  // null = pas encore décidé
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  market   Market    @relation(fields: [marketId], references: [id])
+  betItems BetItem[]
+
+  @@map("outcomes")
+}
+
+// ─────────────────────────────────────────
+// PARIS
+// ─────────────────────────────────────────
+model Bet {
+  id           String    @id @default(cuid())
+  userId       String
+  type         BetType   @default(SINGLE)
+  stake        Decimal   @db.Decimal(12, 2)
+  totalOdds    Decimal   @db.Decimal(10, 4)
+  potentialWin Decimal   @db.Decimal(12, 2)
+  status       BetStatus @default(PENDING)
+  settledAt    DateTime?
+  createdAt    DateTime  @default(now())
+
+  user     User      @relation(fields: [userId], references: [id])
+  betItems BetItem[]
+
+  @@map("bets")
+}
+
+enum BetType {
+  SINGLE
+  COMBINED   // Combiné / Accumulator
+  SYSTEM
+}
+
+enum BetStatus {
+  PENDING
+  WON
+  LOST
+  VOID
+  PARTIAL_WIN
+  CASHOUT
+}
+
+model BetItem {
+  id        String  @id @default(cuid())
+  betId     String
+  outcomeId String
+  odds      Decimal @db.Decimal(8, 2)  // snapshot des cotes au moment du pari
+
+  bet     Bet     @relation(fields: [betId],     references: [id])
+  outcome Outcome @relation(fields: [outcomeId], references: [id])
+
+  @@map("bet_items")
+}

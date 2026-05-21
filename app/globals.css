@@ -1,0 +1,127 @@
+/* app/globals.css */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --font-display: 'Syne', serif;
+    --font-body:    'DM Sans', sans-serif;
+  }
+
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: #0d1117;
+    color: #ffffff;
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Scrollbar personnalisée */
+  ::-webkit-scrollbar       { width: 6px; }
+  ::-webkit-scrollbar-track { background: #0d1117; }
+  ::-webkit-scrollbar-thumb { background: rgba(255,193,7,0.3); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(255,193,7,0.6); }
+}
+
+@layer components {
+  /* ─── Boutons ─────────────────────────────── */
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl
+           bg-gradient-brand text-dark-950 font-display font-bold text-sm
+           transition-all duration-200 hover:shadow-brand hover:scale-[1.02]
+           active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl
+           bg-transparent border border-white/10 text-white font-display text-sm
+           transition-all duration-200 hover:border-brand-500/40 hover:bg-white/5
+           active:scale-95;
+  }
+
+  /* ─── Cartes ─────────────────────────────── */
+  .card {
+    @apply bg-dark-800 rounded-2xl border border-white/5 shadow-card
+           transition-all duration-300;
+  }
+
+  .card-hover {
+    @apply card hover:border-brand-500/20 hover:shadow-card-hover hover:-translate-y-0.5;
+  }
+
+  /* ─── Inputs ─────────────────────────────── */
+  .input {
+    @apply w-full bg-dark-900 border border-white/10 rounded-xl px-4 py-3
+           text-white placeholder:text-dark-400 text-sm
+           focus:outline-none focus:border-brand-500/60 focus:ring-2
+           focus:ring-brand-500/10 transition-all duration-200;
+  }
+
+  /* ─── Badges ─────────────────────────────── */
+  .badge-live {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full
+           bg-danger/10 border border-danger/30 text-danger text-xs font-semibold;
+  }
+
+  .badge-upcoming {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full
+           bg-info/10 border border-info/30 text-info text-xs;
+  }
+
+  /* ─── Cote (odds button) ─────────────────── */
+  .odds-btn {
+    @apply flex flex-col items-center justify-center px-4 py-2.5 rounded-xl
+           bg-dark-900 border border-white/10 cursor-pointer
+           transition-all duration-150
+           hover:border-brand-500/50 hover:bg-brand-500/10
+           active:scale-95;
+  }
+
+  .odds-btn.selected {
+    @apply bg-brand-500/15 border-brand-500 text-brand-400 shadow-brand;
+  }
+
+  /* ─── Navigation ─────────────────────────── */
+  .nav-link {
+    @apply flex items-center gap-3 px-4 py-3 rounded-xl text-dark-300
+           transition-all duration-200
+           hover:text-white hover:bg-white/5;
+  }
+
+  .nav-link.active {
+    @apply text-brand-400 bg-brand-500/10 border border-brand-500/20;
+  }
+}
+
+@layer utilities {
+  .text-gradient {
+    @apply bg-gradient-brand bg-clip-text text-transparent;
+  }
+
+  .glass {
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    background: rgba(26, 31, 46, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+  }
+
+  .noise-overlay::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+    pointer-events: none;
+    opacity: 0.4;
+  }
+}
