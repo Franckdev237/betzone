@@ -1,7 +1,9 @@
-// app/dashboard/page.tsx
 import { Flame, Clock, Trophy, Star, TrendingUp } from 'lucide-react';
 import EventCard from '@/components/betting/EventCard';
 import { prisma } from '@/lib/prisma';
+
+// On force explicitement le rendu dynamique pour éviter que Vercel ne bloque sur les appels Prisma/Dates
+export const dynamic = 'force-dynamic';
 
 async function getEvents() {
   try {
@@ -18,17 +20,18 @@ async function getEvents() {
       orderBy: [{ status: 'asc' }, { startAt: 'asc' }],
       take: 20,
     });
-  } catch {
+  } catch (error) {
+    console.error("Prisma error, falling back to demo data:", error);
     return DEMO_EVENTS;
   }
 }
 
-// ─── Données de démo enrichies ────────────────────────────
+// ─── Données de démo enrichies (Dates stabilisées pour le build) ────────────────────────────
 const DEMO_EVENTS = [
   // ── LIVE ──
   {
     id: 'l1', homeTeam: 'Real Madrid', awayTeam: 'Barcelona',
-    startAt: new Date(), status: 'LIVE',
+    startAt: new Date().toISOString(), status: 'LIVE',
     competition: { name: 'La Liga', sport: { name: 'Football' } },
     markets: [{
       id: 'm1', name: 'Résultat Final', type: 'MATCH_WINNER', isOpen: true,
@@ -41,7 +44,7 @@ const DEMO_EVENTS = [
   },
   {
     id: 'l2', homeTeam: 'France', awayTeam: 'Brésil',
-    startAt: new Date(), status: 'LIVE',
+    startAt: new Date().toISOString(), status: 'LIVE',
     competition: { name: 'Coupe du Monde 2026 🔥', sport: { name: 'Football' } },
     markets: [{
       id: 'm2', name: 'Résultat Final', type: 'MATCH_WINNER', isOpen: true,
@@ -54,7 +57,7 @@ const DEMO_EVENTS = [
   },
   {
     id: 'l3', homeTeam: 'Lakers', awayTeam: 'Celtics',
-    startAt: new Date(), status: 'LIVE',
+    startAt: new Date().toISOString(), status: 'LIVE',
     competition: { name: 'NBA', sport: { name: 'Basketball' } },
     markets: [{
       id: 'm3', name: 'Vainqueur', type: 'MATCH_WINNER', isOpen: true,
@@ -68,7 +71,7 @@ const DEMO_EVENTS = [
   // ── À VENIR ──
   {
     id: 'u1', homeTeam: 'PSG', awayTeam: 'Olympique de Marseille',
-    startAt: new Date(Date.now() + 3_600_000), status: 'UPCOMING',
+    startAt: new Date(Date.now() + 3600000).toISOString(), status: 'UPCOMING',
     competition: { name: 'Ligue 1', sport: { name: 'Football' } },
     markets: [{
       id: 'm4', name: 'Résultat Final', type: 'MATCH_WINNER', isOpen: true,
@@ -81,7 +84,7 @@ const DEMO_EVENTS = [
   },
   {
     id: 'u2', homeTeam: 'Man City', awayTeam: 'Arsenal',
-    startAt: new Date(Date.now() + 7_200_000), status: 'UPCOMING',
+    startAt: new Date(Date.now() + 7200000).toISOString(), status: 'UPCOMING',
     competition: { name: 'Premier League', sport: { name: 'Football' } },
     markets: [{
       id: 'm5', name: 'Résultat Final', type: 'MATCH_WINNER', isOpen: true,
@@ -94,7 +97,7 @@ const DEMO_EVENTS = [
   },
   {
     id: 'u3', homeTeam: 'Bayern Munich', awayTeam: 'Borussia Dortmund',
-    startAt: new Date(Date.now() + 10_800_000), status: 'UPCOMING',
+    startAt: new Date(Date.now() + 10800000).toISOString(), status: 'UPCOMING',
     competition: { name: 'Bundesliga', sport: { name: 'Football' } },
     markets: [{
       id: 'm6', name: 'Résultat Final', type: 'MATCH_WINNER', isOpen: true,
@@ -107,7 +110,7 @@ const DEMO_EVENTS = [
   },
   {
     id: 'u4', homeTeam: 'Argentine', awayTeam: 'Espagne',
-    startAt: new Date(Date.now() + 14_400_000), status: 'UPCOMING',
+    startAt: new Date(Date.now() + 14400000).toISOString(), status: 'UPCOMING',
     competition: { name: 'Coupe du Monde 2026 🔥', sport: { name: 'Football' } },
     markets: [{
       id: 'm7', name: 'Résultat Final', type: 'MATCH_WINNER', isOpen: true,
@@ -120,7 +123,7 @@ const DEMO_EVENTS = [
   },
   {
     id: 'u5', homeTeam: 'Djokovic', awayTeam: 'Alcaraz',
-    startAt: new Date(Date.now() + 18_000_000), status: 'UPCOMING',
+    startAt: new Date(Date.now() + 18000000).toISOString(), status: 'UPCOMING',
     competition: { name: 'ATP Masters 1000', sport: { name: 'Tennis' } },
     markets: [{
       id: 'm8', name: 'Vainqueur', type: 'MATCH_WINNER', isOpen: true,
@@ -132,7 +135,7 @@ const DEMO_EVENTS = [
   },
   {
     id: 'u6', homeTeam: 'Sénégal', awayTeam: 'Maroc',
-    startAt: new Date(Date.now() + 21_600_000), status: 'UPCOMING',
+    startAt: new Date(Date.now() + 21600000).toISOString(), status: 'UPCOMING',
     competition: { name: 'CAN 2026', sport: { name: 'Football' } },
     markets: [{
       id: 'm9', name: 'Résultat Final', type: 'MATCH_WINNER', isOpen: true,
@@ -145,7 +148,7 @@ const DEMO_EVENTS = [
   },
   {
     id: 'u7', homeTeam: 'Coton Sport', awayTeam: 'Al Ahly',
-    startAt: new Date(Date.now() + 25_200_000), status: 'UPCOMING',
+    startAt: new Date(Date.now() + 25200000).toISOString(), status: 'UPCOMING',
     competition: { name: 'Ligue des Champions CAF', sport: { name: 'Football' } },
     markets: [{
       id: 'm10', name: 'Résultat Final', type: 'MATCH_WINNER', isOpen: true,
@@ -158,7 +161,6 @@ const DEMO_EVENTS = [
   },
 ] as any[];
 
-// ─── Stats rapides ───────────────────────────────
 const QUICK_STATS = [
   { label: 'Matchs en direct', value: '12',   icon: '🔴', color: 'text-danger' },
   { label: 'Événements aujourd\'hui', value: '240+', icon: '📅', color: 'text-brand-400' },
