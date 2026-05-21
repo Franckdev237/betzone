@@ -1,4 +1,3 @@
-// app/auth/register/page.tsx
 'use client';
 
 import { useState } from 'react';
@@ -16,7 +15,7 @@ const schema = z.object({
     .min(3, 'Minimum 3 caractères')
     .max(20, 'Maximum 20 caractères')
     .regex(/^[a-zA-Z0-9_]+$/, 'Lettres, chiffres et _ uniquement'),
-  email:    z.string().email('Email invalide'),
+  email:     z.string().email('Email invalide'),
   password: z.string()
     .min(8, 'Minimum 8 caractères')
     .regex(/[A-Z]/, 'Au moins 1 majuscule')
@@ -44,6 +43,18 @@ export default function RegisterPage() {
 
   const pwd = watch('password') ?? '';
 
+  // Fonction utilitaire pour calculer dynamiquement l'URL de redirection de manière sûre
+  const getRedirectUrl = () => {
+    if (process.env.NEXT_PUBLIC_SITE_URL) {
+      return `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`;
+    }
+    // Fallback safe si on est sur le navigateur
+    if (typeof window !== 'undefined') {
+      return `${window.location.origin}/auth/callback`;
+    }
+    return 'http://localhost:3000/auth/callback';
+  };
+
   const onSubmit = async (data: FormData) => {
     setLoading(true);
     try {
@@ -52,7 +63,8 @@ export default function RegisterPage() {
         password: data.password,
         options: {
           data: { username: data.username },
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
+          // Utilisation de l'URL calculée de façon robuste
+          emailRedirectTo: getRedirectUrl(),
         },
       });
       if (error) throw error;
