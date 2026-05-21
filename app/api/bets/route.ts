@@ -1,13 +1,14 @@
-// app/api/bets/route.ts
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
+import { cookies } from 'next/headers';
+import { prisma } from '@/lib/prisma';
+import { z } from 'zod';
+
+// Config de la route (toujours APRÈS les imports pour Next.js)
 export const dynamic = 'force-dynamic';
 
-import { NextResponse }               from 'next/server';
-import type { NextRequest }           from 'next/server';
-import { createRouteHandlerClient }   from '@supabase/auth-helpers-nextjs';
-import { cookies }                    from 'next/headers';
-import { prisma }                     from '@/lib/prisma';
-import { z }                          from 'zod';
-
+// Validation du schéma avec Zod
 const betSchema = z.object({
   selections: z.array(z.object({
     outcomeId: z.string(),
@@ -29,6 +30,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { selections, stake, type } = betSchema.parse(body);
 
+    // Récupération du portefeuille
     const wallet = await prisma.wallet.findUnique({
       where: { userId: session.user.id },
     });
@@ -37,19 +39,28 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: 'Portefeuille introuvable' }, { status: 404 });
     }
 
-    if (wallet.balance.toNumber() < stake) {
+    // Vérification sécurisée du solde (conversion propre en float/number pour la comparaison)
+    const currentBalance = typeof wallet.balance === 'object' && 'toNumber' in wallet.balance 
+      ? (wallet.balance as any).toNumber() 
+      : Number(wallet.balance);
+
+    if (currentBalance < stake) {
       return NextResponse.json({ message: 'Solde insuffisant' }, { status: 400 });
     }
 
+    // Calcul des cotes et gains potentiels
     const totalOdds    = selections.reduce((acc, s) => acc * s.odds, 1);
     const potentialWin = parseFloat((stake * totalOdds).toFixed(2));
 
+    // Transaction ACID pour le débit et la création du ticket
     const bet = await prisma.$transaction(async (tx) => {
+      // 1. Débit du compte
       await tx.wallet.update({
         where: { id: wallet.id },
         data:  { balance: { decrement: stake } },
       });
 
+      // 2. Historique de la transaction financière
       await tx.transaction.create({
         data: {
           userId:   session.user.id,
@@ -60,6 +71,7 @@ export async function POST(req: NextRequest) {
         },
       });
 
+      // 3. Création du ticket de pari et de ses lignes (items)
       return await tx.bet.create({
         data: {
           userId:       session.user.id,
@@ -99,6 +111,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ message: 'Non authentifié' }, { status: 401 });
     }
 
+    // Récupération des 50 derniers paris avec toutes les relations pour l'affichage complet
     const bets = await prisma.bet.findMany({
       where:   { userId: session.user.id },
       include: {
@@ -126,6 +139,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ bets });
   } catch (err) {
+    console.error('Get bets error:', err);
     return NextResponse.json({ message: 'Erreur serveur' }, { status: 500 });
   }
 }
